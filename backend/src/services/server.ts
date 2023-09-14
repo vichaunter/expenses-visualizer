@@ -1,5 +1,9 @@
+import express, { Express } from "express";
 import http from "node:http";
 import { PORT } from "../constants";
+import routes, { Routes } from "../routes";
+import { notExistingRoute } from "../routes/baseRoutes";
+
 const SEARCH_LIMIT = 30;
 
 var invalidPortsCount = 0;
@@ -22,7 +26,26 @@ const getFreePortFrom = (port: number = PORT): Promise<number> =>
         });
     }
   });
+
+const mapRoutes = (app: Express, routes: Routes[]) => {
+  for (let route of routes) {
+    app.use(route.path, route.controller);
+  }
+
+  app.use(notExistingRoute);
+};
+
 const init = async () => {
+  const app = express();
+  const port = await getFreePortFrom();
+
+  mapRoutes(app, routes);
+
+  const server = http.createServer(app).listen(port, () => {
+    const { port } = server.address() as { port: number };
+    console.log(`Server started on port: http://localhost:${port}`);
+  });
+
   return server;
 };
 
